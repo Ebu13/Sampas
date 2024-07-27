@@ -1,0 +1,65 @@
+# Visual Studio Code
+.vscode/
+.vscode/*
+
+.vs/
+.vs/*
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Mono Auto Generated Files
+mono_crash.*
+
+# Windows image file caches
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+
+# Logs
+*.log
+Logs/
+
+# Dependency directories
+node_modules/
+bower_components/
+
+# DotNet artifacts
+*.dll
+*.exe
+*.so
+*.dylib
+*.pdb
+*.mdb
+*.runtimeconfig.json
+*.runtimeconfig.dev.json
+*.runtimeconfig.test.json
+*.deps.json
+*.dll.config
+*.exe.config
+*.config
+*.manifest
+
+# Project temporary files
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Build directory
+bin/
+obj/

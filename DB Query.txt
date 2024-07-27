@@ -1,0 +1,184 @@
+CREATE TABLE Categories
+(      
+    CategoryID SERIAL PRIMARY KEY,
+    CategoryName VARCHAR(25),
+    Description VARCHAR(255)
+);
+
+CREATE TABLE Customers
+(      
+    CustomerID SERIAL PRIMARY KEY,
+    CustomerName VARCHAR(50),
+    ContactName VARCHAR(50),
+    Address VARCHAR(50),
+    City VARCHAR(20),
+    PostalCode VARCHAR(10),
+    Country VARCHAR(15),
+    Password VARCHAR(255)  -- Yeni eklenen sütun
+);
+
+CREATE TABLE Employees
+(
+    EmployeeID SERIAL PRIMARY KEY,
+    LastName VARCHAR(15),
+    FirstName VARCHAR(15),
+    BirthDate TIMESTAMP,
+    Photo VARCHAR(25),
+    Notes VARCHAR(1024),
+    Password VARCHAR(255)  -- Yeni eklenen sütun
+);
+
+CREATE TABLE Shippers(
+    ShipperID SERIAL PRIMARY KEY,
+    ShipperName VARCHAR(25),
+    Phone VARCHAR(15)
+);
+
+CREATE TABLE Suppliers(
+    SupplierID SERIAL PRIMARY KEY,
+    SupplierName VARCHAR(50),
+    ContactName VARCHAR(50),
+    Address VARCHAR(50),
+    City VARCHAR(20),
+    PostalCode VARCHAR(10),
+    Country VARCHAR(15),
+    Phone VARCHAR(15)
+);
+
+CREATE TABLE Products(
+    ProductID SERIAL PRIMARY KEY,
+    ProductName VARCHAR(50),
+    SupplierID INTEGER,
+    CategoryID INTEGER,
+    Unit VARCHAR(25),
+    Price NUMERIC,
+    FOREIGN KEY (CategoryID) REFERENCES Categories (CategoryID),
+    FOREIGN KEY (SupplierID) REFERENCES Suppliers (SupplierID)
+);
+
+CREATE TABLE Orders(
+    OrderID SERIAL PRIMARY KEY,
+    CustomerID INTEGER,
+    EmployeeID INTEGER,
+    OrderDate TIMESTAMP,
+    ShipperID INTEGER,
+    FOREIGN KEY (EmployeeID) REFERENCES Employees (EmployeeID),
+    FOREIGN KEY (CustomerID) REFERENCES Customers (CustomerID),
+    FOREIGN KEY (ShipperID) REFERENCES Shippers (ShipperID)
+);
+
+CREATE TABLE OrderDetails(
+    OrderDetailID SERIAL PRIMARY KEY,
+    OrderID INTEGER,
+    ProductID INTEGER,
+    Quantity INTEGER,
+    FOREIGN KEY (OrderID) REFERENCES Orders (OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Products (ProductID)
+);
+
+CREATE TABLE Messages
+(
+    MessageID SERIAL PRIMARY KEY,
+    SenderID INTEGER,
+    ReceiverID INTEGER,
+    MessageText TEXT,
+    SentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (SenderID) REFERENCES Employees(EmployeeID),
+    FOREIGN KEY (ReceiverID) REFERENCES Employees(EmployeeID)
+);
+
+
+
+
+
+
+
+---------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE TABLE Categories (
+    CategoryID INT NOT NULL PRIMARY KEY,
+    CategoryName VARCHAR(25) NULL,
+    Description VARCHAR(255) NULL
+);
+
+CREATE TABLE Customers (
+    CustomerID INT NOT NULL PRIMARY KEY,
+    CustomerName VARCHAR(50) NULL,
+    ContactName VARCHAR(50) NULL,
+    Address VARCHAR(50) NULL,
+    City VARCHAR(20) NULL,
+    PostalCode VARCHAR(10) NULL,
+    Country VARCHAR(15) NULL,
+    Password VARCHAR(255) NULL
+);
+
+CREATE TABLE Employees (
+    EmployeeID INT NOT NULL PRIMARY KEY,
+    LastName VARCHAR(15) NULL,
+    FirstName VARCHAR(15) NULL,
+    BirthDate DATETIME NULL,
+    Notes VARCHAR(1024) NULL,
+    Password VARCHAR(255) NULL
+);
+
+CREATE TABLE Shippers (
+    ShipperID INT NOT NULL PRIMARY KEY,
+    ShipperName VARCHAR(25) NULL,
+    Phone VARCHAR(15) NULL
+);
+
+CREATE TABLE Suppliers (
+    SupplierID INT NOT NULL PRIMARY KEY,
+    SupplierName VARCHAR(50) NULL,
+    ContactName VARCHAR(50) NULL,
+    Address VARCHAR(50) NULL,
+    City VARCHAR(20) NULL,
+    PostalCode VARCHAR(10) NULL,
+    Country VARCHAR(15) NULL,
+    Phone VARCHAR(15) NULL
+);
+
+CREATE TABLE Products (
+    ProductID INT NOT NULL PRIMARY KEY,
+    ProductName VARCHAR(50) NULL,
+    SupplierID INT NULL,
+    CategoryID INT NULL,
+    Unit VARCHAR(25) NULL,
+    Price NUMERIC NULL
+);
+
+CREATE TABLE OrderDetails (
+    OrderDetailID INT NOT NULL PRIMARY KEY,
+    OrderID INT NULL,
+    ProductID INT NULL,
+    Quantity INT NULL
+);
+
+CREATE TABLE Messages (
+    MessageID INT NOT NULL PRIMARY KEY,
+    SenderID INT NOT NULL,
+    ReceiverID INT NOT NULL,
+    MessageText NVARCHAR(MAX) NULL,
+    SentDate DATETIME NULL
+);
+
+CREATE TABLE Orders (
+    OrderID INT NOT NULL PRIMARY KEY,
+    CustomerID INT NULL,
+    EmployeeID INT NULL,
+    OrderDate DATETIME NOT NULL,
+    ShipperID INT NULL
+);
