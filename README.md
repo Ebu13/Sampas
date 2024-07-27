@@ -1,0 +1,2 @@
+# Sampas
+Alıştırma
