@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Northwind.Models;
 
-public partial class Message
+public partial class MessagesCustomerToEmployee
 {
     public int MessageId { get; set; }
 
@@ -14,8 +14,4 @@ public partial class Message
     public string? MessageText { get; set; }
 
     public DateTime? SentDate { get; set; }
-
-    public virtual Employee Receiver { get; set; } = null!;
-
-    public virtual Employee Sender { get; set; } = null!;
 }

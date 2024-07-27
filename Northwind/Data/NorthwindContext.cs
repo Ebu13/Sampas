@@ -24,6 +24,8 @@ public partial class NorthwindContext : DbContext
 
     public virtual DbSet<Message> Messages { get; set; }
 
+    public virtual DbSet<MessagesCustomerToEmployee> MessagesCustomerToEmployees { get; set; }
+
     public virtual DbSet<Order> Orders { get; set; }
 
     public virtual DbSet<OrderDetail> OrderDetails { get; set; }
@@ -121,6 +123,20 @@ public partial class NorthwindContext : DbContext
                 .HasForeignKey(d => d.SenderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Messages__Sender__4F7CD00D");
+        });
+
+        modelBuilder.Entity<MessagesCustomerToEmployee>(entity =>
+        {
+            entity.HasKey(e => e.MessageId).HasName("PK__Messages__C87C037C15411CF1");
+
+            entity.ToTable("MessagesCustomerToEmployee");
+
+            entity.Property(e => e.MessageId)
+                .ValueGeneratedNever()
+                .HasColumnName("MessageID");
+            entity.Property(e => e.ReceiverId).HasColumnName("ReceiverID");
+            entity.Property(e => e.SenderId).HasColumnName("SenderID");
+            entity.Property(e => e.SentDate).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<Order>(entity =>
