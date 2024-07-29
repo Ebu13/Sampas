@@ -39,17 +39,8 @@ builder.Services.AddScoped<IGenericService<ProductDetailRequestDTO>, ProductDeta
 builder.Services.AddScoped<IGenericService<AdminCategoryRequestDTO>, AdminCategoryService>();
 builder.Services.AddScoped<IGenericService<SupplierDetailRequestDTO>, SupplierDetailService>();
 
-// Register SupplierDetailService
-builder.Services.AddScoped<SupplierDetailService>(); // Eklenen kýsým
-
-// Register MessageDetailService
-builder.Services.AddScoped<MessageDetailService>();
-
 // Register UserService
-builder.Services.AddScoped<IGenericService<User>, UserService>(); // UserService'i buraya ekleyin
-
-// Register ComprehensiveOrderDetailService
-builder.Services.AddScoped<ComprehensiveOrderDetailService>();
+builder.Services.AddScoped<IGenericService<User>, UserService>();
 
 // Add memory cache for session management
 builder.Services.AddDistributedMemoryCache(); // Eklenen kýsým
@@ -105,6 +96,7 @@ app.UseRouting();
 app.UseCors();
 
 app.UseSession(); // Oturum middleware'ini ekle
+
 app.UseAuthorization();
 
 app.MapControllers();

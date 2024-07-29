@@ -56,8 +56,7 @@ namespace Northwind.Controllers
             {
                 return Unauthorized("Kullanıcı adı veya şifre yanlış.");
             }
-            String userId = user.UserId.ToString();
-            HttpContext.Session.SetString("UserId", userId);
+            HttpContext.Session.SetString("UserId", user.UserId.ToString());
 
             return Ok(user);
         }
@@ -104,6 +103,16 @@ namespace Northwind.Controllers
         {
             await _userService.DeleteAsync(id);
             return NoContent();
+        }
+
+        // POST: api/users/logout
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // Kullanıcının oturumunu kapat
+            HttpContext.Session.Clear(); // Tüm oturum verilerini temizle
+
+            return Ok(new { Message = "Başarıyla çıkış yapıldı." });
         }
     }
 }

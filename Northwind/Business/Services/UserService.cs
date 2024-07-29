@@ -1,6 +1,4 @@
-﻿using global::Northwind.Data;
-using global::Northwind.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Northwind.Data;
 using Northwind.Models;
 using System.Collections.Generic;

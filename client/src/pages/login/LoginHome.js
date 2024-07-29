@@ -1,94 +1,71 @@
-// pages/login/LoginHome.js
-import React, {useState } from "react";
-import axios from 'axios';
-import { Container, TextField, Button, Typography, Box } from '@mui/material';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { TextField, Button, Grid, Paper, Typography } from '@mui/material';
 
-function LoginHome() {
-  const [username, setUsername] = useState(''); // Kullanıcı adı
-  const [password, setPassword] = useState(''); // Şifre
-  const navigate = useNavigate();
+const LoginHome = () => {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError('');
 
-    try {
-      const response = await axios.post('https://localhost:7096/api/users/login', {
-        username: username,
-        password: password,
-      });
+        try {
+            const response = await axios.post('https://localhost:7096/api/users/login', {
+                username,
+                password,
+            });
 
-      const user = response.data;
+            const user = response.data;
 
-      // Kullanıcının rolüne göre yönlendir
-      switch (user.role) {
-        case 'Admin':
-          navigate('/admin');
-          break;
-        case 'Employee':
-          navigate('/employee');
-          break;
-        case 'Customer':
-          navigate('/customer');
-          break;
-        default:
-          alert('Geçersiz rol');
-      }
-    } catch (error) {
-      alert('Kullanıcı adı veya şifre yanlış');
-    }
-  };
+            // Kullanıcının rolüne göre yönlendirme
+            if (user.role === 'Admin') {
+                navigate('/admin');
+            } else if (user.role === 'Employee') {
+                navigate('/employee');
+            } else if (user.role === 'Customer') {
+                navigate('/customer');
+            }
+        } catch (err) {
+            setError(err.response ? err.response.data : 'Giriş başarısız.');
+        }
+    };
 
-  return (
-    <Container maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Typography component="h1" variant="h5">
-          Giriş Yap
-        </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="username"
-            label="Kullanıcı Adı"
-            name="username"
-            autoComplete="given-name"
-            autoFocus
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Şifre"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-          >
-            Giriş Yap
-          </Button>
-        </Box>
-      </Box>
-    </Container>
-  );
-}
+    return (
+        <Grid container justifyContent="center" alignItems="center" style={{ height: '100vh' }}>
+            <Paper elevation={3} style={{ padding: '20px', width: '300px' }}>
+                <Typography variant="h4" align="center">Giriş Yap</Typography>
+                <form onSubmit={handleLogin}>
+                    <TextField
+                        label="Kullanıcı Adı"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                    />
+                    <TextField
+                        label="Şifre"
+                        type="password"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <Button type="submit" variant="contained" color="primary" fullWidth>
+                        Giriş Yap
+                    </Button>
+                    {error && <Typography color="error" align="center" style={{ marginTop: '10px' }}>{error}</Typography>}
+                </form>
+            </Paper>
+        </Grid>
+    );
+};
 
 export default LoginHome;
