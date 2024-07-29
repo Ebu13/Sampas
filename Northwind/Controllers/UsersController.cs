@@ -80,8 +80,9 @@ namespace Northwind.Controllers
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Role, user.Role)
+                    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Role, user.Role)
                 }),
                 Expires = DateTime.UtcNow.AddHours(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
@@ -92,28 +93,25 @@ namespace Northwind.Controllers
             return Ok(tokenString);
         }
 
-
         [Authorize]
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userId))
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
             {
                 return Unauthorized(new { Message = "Kullanıcı oturumu bulunamadı." });
             }
-            else
-            {
-                var user = await _userService.GetByIdAsync(int.Parse(userId));
-                if (user == null)
-                {
-                    return Unauthorized(new { Message = "Kullanıcı oturumu bulunamadı." });
-                }
-                return Ok(user);
-            }
-        }
 
+            var userId = int.Parse(userIdClaim.Value);
+            var user = await _userService.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return Unauthorized(new { Message = "Kullanıcı oturumu bulunamadı." });
+            }
+
+            return Ok(user);
+        }
 
         // POST: api/users
         [HttpPost]
