@@ -9,6 +9,7 @@ using Northwind.Data;
 using Northwind.Business.Request;
 using Northwind.Business.Services;
 using Northwind.Business.Response;
+using Northwind.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,9 @@ builder.Services.AddScoped<SupplierDetailService>(); // Eklenen kýsým
 
 // Register MessageDetailService.cs
 builder.Services.AddScoped<MessageDetailService>();
+
+builder.Services.AddScoped<IGenericService<User>, UserService>(); // UserService'i buraya ekleyin
+
 
 // Register ComprehensiveOrderDetailService
 builder.Services.AddScoped<ComprehensiveOrderDetailService>();

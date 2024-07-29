@@ -1,57 +1,42 @@
 // pages/login/LoginHome.js
-import React, { useEffect, useState } from "react";
+import React, {useState } from "react";
 import axios from 'axios';
 import { Container, TextField, Button, Typography, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 function LoginHome() {
-  const [customers, setCustomers] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [customerName, setCustomerName] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState(''); // Kullanıcı adı
+  const [password, setPassword] = useState(''); // Şifre
   const navigate = useNavigate();
 
-  useEffect(() => {
-    axios.get('https://localhost:7096/api/customer')
-      .then(response => {
-        setCustomers(response.data.$values);
-      })
-      .catch(error => {
-        console.error('Error fetching customers:', error);
-      });
-
-    axios.get('https://localhost:7096/api/employee')
-      .then(response => {
-        setEmployees(response.data.$values);
-      })
-      .catch(error => {
-        console.error('Error fetching employees:', error);
-      });
-  }, []);
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Check if customer
-    const customer = customers.find(cust => cust.customerName === customerName && cust.password === password);
-    if (customer) {
-      navigate('/customer');
-      return;
-    }
+    try {
+      const response = await axios.post('https://localhost:7096/api/users/login', {
+        username: username,
+        password: password,
+      });
 
-    // Check if employee
-    const employee = employees.find(emp => emp.firstName === customerName && emp.password === password);
-    if (employee) {
-      if (employee.employeeId === 1) {
-        navigate('/admin');
-      } else {
-        navigate('/employee');
+      const user = response.data;
+
+      // Kullanıcının rolüne göre yönlendir
+      switch (user.role) {
+        case 'Admin':
+          navigate('/admin');
+          break;
+        case 'Employee':
+          navigate('/employee');
+          break;
+        case 'Customer':
+          navigate('/customer');
+          break;
+        default:
+          alert('Geçersiz rol');
       }
-      return;
+    } catch (error) {
+      alert('Kullanıcı adı veya şifre yanlış');
     }
-
-    // If neither found
-    alert('Kullanıcı adı veya şifre yanlış');
   };
 
   return (
@@ -72,13 +57,13 @@ function LoginHome() {
             margin="normal"
             required
             fullWidth
-            id="customerName"
-            label="İsim"
-            name="customerName"
+            id="username"
+            label="Kullanıcı Adı"
+            name="username"
             autoComplete="given-name"
             autoFocus
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <TextField
             margin="normal"

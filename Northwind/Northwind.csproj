@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Compile Remove="Business\Services\AdminCategoryRequestDTO.cs" />
+    <Compile Remove="Controllers\AuthController.cs" />
   </ItemGroup>
 
   <ItemGroup>
