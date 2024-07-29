@@ -1,31 +1,75 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Northwind.Data;
 using Northwind.Business.Request;
 using Northwind.Business.Services;
-using Northwind.Business.Response;
 using Northwind.Models;
-using Microsoft.AspNetCore.Session; // Oturum için gerekli kütüphane
+using System.Text;
+using Newtonsoft.Json;
+using Northwind.Api.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// Configuration nesnesine eriþim
+var configuration = builder.Configuration;
+
+// JWT ayarlarý
+var key = configuration["Jwt:Key"];
+var issuer = configuration["Jwt:Issuer"];
+var audience = configuration["Jwt:Audience"];
+
+// JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                context.Response.Headers.Add("Authentication-Failed", "true");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                // Ekstra özel doðrulama mantýðý
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                var result = JsonConvert.SerializeObject(new { error = "You are not authorized" });
+                return context.Response.WriteAsync(result);
+            }
+        };
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+        };
+    });
+
+// Kontrolcüler için JSON seçeneklerini ayarla
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-    options.JsonSerializerOptions.MaxDepth = 64; // Optional: Increase MaxDepth for deeper object graphs
+    options.JsonSerializerOptions.MaxDepth = 64; // Derin nesne grafikleri için MaxDepth'ý artýr
 });
 
-// Configure DbContext
+// DbContext'i yapýlandýr
 builder.Services.AddDbContext<NorthwindContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-// Register application services
+// Uygulama hizmetlerini kaydet
 builder.Services.AddScoped<IGenericService<EmployeeRequestDTO>, EmployeeService>();
 builder.Services.AddScoped<IGenericService<CategoryRequestDTO>, CategoryService>();
 builder.Services.AddScoped<IGenericService<CustomerRequestDTO>, CustomerService>();
@@ -38,34 +82,60 @@ builder.Services.AddScoped<IGenericService<SupplierRequestDTO>, SupplierService>
 builder.Services.AddScoped<IGenericService<ProductDetailRequestDTO>, ProductDetailService>();
 builder.Services.AddScoped<IGenericService<AdminCategoryRequestDTO>, AdminCategoryService>();
 builder.Services.AddScoped<IGenericService<SupplierDetailRequestDTO>, SupplierDetailService>();
-builder.Services.AddScoped<MessageDetailService>(); 
-builder.Services.AddScoped<ComprehensiveOrderDetailService, ComprehensiveOrderDetailService>();
+builder.Services.AddScoped<ComprehensiveOrderDetailService>();
+// Uygulama hizmetlerini kaydet
+builder.Services.AddScoped<MessageDetailService>();
 
-
-builder.Services.AddScoped<OrderDetailService>();
-builder.Services.AddScoped<ComprehensiveOrderDetailService>(); // veya bir interface üzerinden
-
-// Register UserService
+// UserService'i kaydet
 builder.Services.AddScoped<IGenericService<User>, UserService>();
 
-// Add memory cache for session management
-builder.Services.AddDistributedMemoryCache(); // Eklenen kýsým
+builder.Services.AddScoped<MessageDetailService>();
 
-// Add session services
+builder.Services.AddScoped<MessageDetailService, MessageDetailService>();
+
+// UserService'i kaydet
+builder.Services.AddScoped<IGenericService<User>, UserService>();
+
+// Oturum yönetimi için bellek önbelleði ekle
+builder.Services.AddDistributedMemoryCache();
+
+// Oturum hizmetlerini ekle
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30); // Oturum zaman aþým süresi
-    options.Cookie.HttpOnly = true; // Çerezlerin sadece HTTP istekleriyle eriþilebilir olmasýný saðla
+    options.Cookie.HttpOnly = true; // Çerezlerin sadece HTTP üzerinden eriþilebilir olmasýný saðla
     options.Cookie.IsEssential = true; // Çerezlerin zorunlu olduðunu belirt
 });
 
-// Add Swagger for API documentation
+// API dokümantasyonu için Swagger ekle
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Northwind API", Version = "v1" });
+
+    // JWT Bearer Authentication
+    var securityScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Description = "Lütfen **'Bearer {your token}'** formatýnda token girin.",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Reference = new OpenApiReference
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = "Bearer"
+        }
+    };
+
+    c.AddSecurityDefinition("Bearer", securityScheme);
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { securityScheme, new string[] { } }
+    });
 });
 
-// Configure CORS policy
+// CORS politikasýný yapýlandýr
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(builder =>
@@ -78,7 +148,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// HTTP istek hattýný yapýlandýr
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -98,13 +168,12 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Use CORS policy
+// CORS politikasýný kullan
 app.UseCors();
 
 app.UseSession(); // Oturum middleware'ini ekle
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();
