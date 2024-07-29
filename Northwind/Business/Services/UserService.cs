@@ -3,7 +3,6 @@ using Northwind.Data;
 using Northwind.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using BCrypt.Net; // BCrypt kütüphanesini ekleyin
 
 namespace Northwind.Business.Services
 {
@@ -28,7 +27,8 @@ namespace Northwind.Business.Services
 
         public async Task<User> CreateAsync(User entity)
         {
-            entity.Password = BCrypt.Net.BCrypt.HashPassword(entity.Password); // Şifreyi hash'le
+            // Şifreyi burada hash'lemeyi başka bir yöntem ile gerçekleştirin
+            entity.Password = HashPassword(entity.Password); // Kendi hashleme yönteminiz
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();
             return entity;
@@ -40,7 +40,7 @@ namespace Northwind.Business.Services
             if (user != null)
             {
                 user.Username = entity.Username;
-                user.Password = BCrypt.Net.BCrypt.HashPassword(entity.Password); // Hash'lenmiş olarak güncelle
+                user.Password = HashPassword(entity.Password); // Kendi hashleme yönteminiz
                 user.Role = entity.Role;
                 user.PersonId = entity.PersonId; // Eğer PersonId alanı kullanılıyorsa
                 await _context.SaveChangesAsync();
@@ -55,6 +55,13 @@ namespace Northwind.Business.Services
                 _context.Users.Remove(user);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        private string HashPassword(string password)
+        {
+            // Burada kendi hashleme algoritmanızı uygulayın
+            // Örneğin, basit bir hashleme yöntemi
+            return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password)); // Basit bir örnek
         }
     }
 }

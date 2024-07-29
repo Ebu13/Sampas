@@ -31,11 +31,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 context.Response.Headers.Add("Authentication-Failed", "true");
                 return Task.CompletedTask;
             },
-            OnTokenValidated = context =>
-            {
-                // Ekstra özel doðrulama mantýðý
-                return Task.CompletedTask;
-            },
             OnChallenge = context =>
             {
                 context.HandleResponse();
@@ -45,7 +40,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 return context.Response.WriteAsync(result);
             }
         };
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -57,6 +51,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
         };
     });
+
 
 // Kontrolcüler için JSON seçeneklerini ayarla
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -82,9 +77,10 @@ builder.Services.AddScoped<IGenericService<SupplierRequestDTO>, SupplierService>
 builder.Services.AddScoped<IGenericService<ProductDetailRequestDTO>, ProductDetailService>();
 builder.Services.AddScoped<IGenericService<AdminCategoryRequestDTO>, AdminCategoryService>();
 builder.Services.AddScoped<IGenericService<SupplierDetailRequestDTO>, SupplierDetailService>();
-builder.Services.AddScoped<ComprehensiveOrderDetailService>();
+
 // Uygulama hizmetlerini kaydet
 builder.Services.AddScoped<MessageDetailService>();
+builder.Services.AddScoped<ComprehensiveOrderDetailService>(); // Buraya ekleyin
 
 // UserService'i kaydet
 builder.Services.AddScoped<IGenericService<User>, UserService>();
@@ -172,8 +168,9 @@ app.UseRouting();
 app.UseCors();
 
 app.UseSession(); // Oturum middleware'ini ekle
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseAuthentication(); // Doðrulama middleware'i
+app.UseAuthorization(); // Yetkilendirme middleware'i
 
 app.MapControllers();
+
 app.Run();

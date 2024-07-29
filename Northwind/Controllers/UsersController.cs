@@ -11,8 +11,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Http;
-using BCrypt;
 
 namespace Northwind.Controllers
 {
@@ -60,10 +58,18 @@ namespace Northwind.Controllers
             }
 
             var users = await _userService.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == loginRequest.Username); // Şifre kontrolü için hashing ekleyin
+            var user = users.FirstOrDefault(u => u.Username == loginRequest.Username);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password)) // Şifre doğrulama
+            if (user == null)
             {
+                // Kullanıcı adı bulunamadı
+                return Unauthorized("Kullanıcı adı veya şifre yanlış.");
+            }
+
+            // Düz metin şifre doğrulama
+            if (user.Password != loginRequest.Password)
+            {
+                // Şifre yanlış
                 return Unauthorized("Kullanıcı adı veya şifre yanlış.");
             }
 
@@ -74,8 +80,8 @@ namespace Northwind.Controllers
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.Role, user.Role) // Kullanıcı rolünü ekleyebilirsiniz
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Role, user.Role)
                 }),
                 Expires = DateTime.UtcNow.AddHours(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
@@ -85,6 +91,7 @@ namespace Northwind.Controllers
 
             return Ok(tokenString);
         }
+
 
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
@@ -128,6 +135,12 @@ namespace Northwind.Controllers
         {
             await _userService.DeleteAsync(id);
             return NoContent();
+        }
+
+        private bool VerifyPassword(string password, string storedHash)
+        {
+            // Hashlenmiş şifreyi doğrulama yönteminizi burada uygulayın
+            return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password)) == storedHash; // Basit bir örnek
         }
     }
 }
