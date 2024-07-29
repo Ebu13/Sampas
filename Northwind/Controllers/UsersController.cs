@@ -5,19 +5,29 @@ using Northwind.Business.Request;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
+using BCrypt;
 
 namespace Northwind.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
         private readonly IGenericService<User> _userService;
+        private readonly IConfiguration _configuration;
 
-
-        public UsersController(IGenericService<User> userService)
+        public UsersController(IGenericService<User> userService, IConfiguration configuration)
         {
             _userService = userService;
+            _configuration = configuration;
         }
 
         // GET: api/users
@@ -40,9 +50,9 @@ namespace Northwind.Controllers
             return Ok(user);
         }
 
-        // POST: api/users/login
+        [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<User>> GetUserByCredentials([FromBody] LoginRequestDTO loginRequest)
+        public async Task<ActionResult<string>> GetUserByCredentials([FromBody] LoginRequestDTO loginRequest)
         {
             if (loginRequest == null)
             {
@@ -50,21 +60,36 @@ namespace Northwind.Controllers
             }
 
             var users = await _userService.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == loginRequest.Username && u.Password == loginRequest.Password);
+            var user = users.FirstOrDefault(u => u.Username == loginRequest.Username); // Şifre kontrolü için hashing ekleyin
 
-            if (user == null)
+            if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password)) // Şifre doğrulama
             {
                 return Unauthorized("Kullanıcı adı veya şifre yanlış.");
             }
-            HttpContext.Session.SetString("UserId", user.UserId.ToString());
 
-            return Ok(user);
+            // JWT oluşturma
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenKey = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Role, user.Role) // Kullanıcı rolünü ekleyebilirsiniz
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return Ok(tokenString);
         }
 
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var userId = HttpContext.Session.GetString("UserId");
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -103,16 +128,6 @@ namespace Northwind.Controllers
         {
             await _userService.DeleteAsync(id);
             return NoContent();
-        }
-
-        // POST: api/users/logout
-        [HttpPost("logout")]
-        public IActionResult Logout()
-        {
-            // Kullanıcının oturumunu kapat
-            HttpContext.Session.Clear(); // Tüm oturum verilerini temizle
-
-            return Ok(new { Message = "Başarıyla çıkış yapıldı." });
         }
     }
 }
