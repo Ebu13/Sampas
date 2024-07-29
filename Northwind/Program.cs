@@ -1,61 +1,18 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Northwind.Data;
 using Northwind.Business.Request;
 using Northwind.Business.Services;
+using Northwind.Business.Response;
 using Northwind.Models;
-using System.Text;
-using Newtonsoft.Json;
+using Microsoft.AspNetCore.Session; // Oturum için gerekli kütüphane
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Configuration nesnesine eriþim
-var configuration = builder.Configuration;
-
-// JWT settings
-var key = configuration["Jwt:Key"];
-var issuer = configuration["Jwt:Issuer"];
-var audience = configuration["Jwt:Audience"];
-
-// JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                context.Response.Headers.Add("Authentication-Failed", "true");
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                // Additional custom validation logic
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                context.Response.ContentType = "application/json";
-                var result = JsonConvert.SerializeObject(new { error = "You are not authorized" });
-                return context.Response.WriteAsync(result);
-            }
-        };
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
-        };
-    });
 
 // Add services to the container
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -66,7 +23,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 
 // Configure DbContext
 builder.Services.AddDbContext<NorthwindContext>(options =>
-    options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register application services
 builder.Services.AddScoped<IGenericService<EmployeeRequestDTO>, EmployeeService>();
@@ -81,47 +38,31 @@ builder.Services.AddScoped<IGenericService<SupplierRequestDTO>, SupplierService>
 builder.Services.AddScoped<IGenericService<ProductDetailRequestDTO>, ProductDetailService>();
 builder.Services.AddScoped<IGenericService<AdminCategoryRequestDTO>, AdminCategoryService>();
 builder.Services.AddScoped<IGenericService<SupplierDetailRequestDTO>, SupplierDetailService>();
+builder.Services.AddScoped<MessageDetailService>(); 
+builder.Services.AddScoped<ComprehensiveOrderDetailService, ComprehensiveOrderDetailService>();
+
+
+builder.Services.AddScoped<OrderDetailService>();
+builder.Services.AddScoped<ComprehensiveOrderDetailService>(); // veya bir interface üzerinden
 
 // Register UserService
 builder.Services.AddScoped<IGenericService<User>, UserService>();
 
 // Add memory cache for session management
-builder.Services.AddDistributedMemoryCache();
+builder.Services.AddDistributedMemoryCache(); // Eklenen kýsým
 
 // Add session services
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Session timeout duration
-    options.Cookie.HttpOnly = true; // Make cookies accessible only via HTTP
-    options.Cookie.IsEssential = true; // Indicate that cookies are essential
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Oturum zaman aþým süresi
+    options.Cookie.HttpOnly = true; // Çerezlerin sadece HTTP istekleriyle eriþilebilir olmasýný saðla
+    options.Cookie.IsEssential = true; // Çerezlerin zorunlu olduðunu belirt
 });
 
 // Add Swagger for API documentation
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Northwind API", Version = "v1" });
-
-    // JWT Bearer Authentication
-    var securityScheme = new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Description = "Please enter token in the format **'Bearer {your token}'**",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        Reference = new OpenApiReference
-        {
-            Type = ReferenceType.SecurityScheme,
-            Id = "Bearer"
-        }
-    };
-
-    c.AddSecurityDefinition("Bearer", securityScheme);
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        { securityScheme, new string[] { } }
-    });
 });
 
 // Configure CORS policy
@@ -160,9 +101,10 @@ app.UseRouting();
 // Use CORS policy
 app.UseCors();
 
-app.UseSession(); // Add session middleware
-app.UseAuthentication();
+app.UseSession(); // Oturum middleware'ini ekle
+
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();
