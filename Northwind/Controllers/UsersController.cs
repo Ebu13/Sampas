@@ -93,11 +93,11 @@ namespace Northwind.Controllers
         }
 
 
+        [Authorize]
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -113,6 +113,7 @@ namespace Northwind.Controllers
                 return Ok(user);
             }
         }
+
 
         // POST: api/users
         [HttpPost]

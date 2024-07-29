@@ -16,41 +16,26 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // JWT ayarlarý
-var key = configuration["Jwt:Key"];
+
 var issuer = configuration["Jwt:Issuer"];
 var audience = configuration["Jwt:Audience"];
 
 // JWT Authentication
+var key = configuration["Jwt:Key"];
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                context.Response.Headers.Add("Authentication-Failed", "true");
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                context.Response.ContentType = "application/json";
-                var result = JsonConvert.SerializeObject(new { error = "You are not authorized" });
-                return context.Response.WriteAsync(result);
-            }
-        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
+            ValidateIssuer = false,
+            ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
         };
     });
+
 
 
 // Kontrolcüler için JSON seçeneklerini ayarla
