@@ -56,8 +56,30 @@ namespace Northwind.Controllers
             {
                 return Unauthorized("Kullanıcı adı veya şifre yanlış.");
             }
+            String userId = user.UserId.ToString();
+            HttpContext.Session.SetString("UserId", userId);
 
             return Ok(user);
+        }
+
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { Message = "Kullanıcı oturumu bulunamadı." });
+            }
+            else
+            {
+                var user = await _userService.GetByIdAsync(int.Parse(userId));
+                if (user == null)
+                {
+                    return Unauthorized(new { Message = "Kullanıcı oturumu bulunamadı." });
+                }
+                return Ok(user);
+            }
         }
 
         // POST: api/users

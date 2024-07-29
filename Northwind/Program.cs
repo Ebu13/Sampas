@@ -10,6 +10,7 @@ using Northwind.Business.Request;
 using Northwind.Business.Services;
 using Northwind.Business.Response;
 using Northwind.Models;
+using Microsoft.AspNetCore.Session; // Oturum için gerekli kütüphane
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,17 +41,26 @@ builder.Services.AddScoped<IGenericService<SupplierDetailRequestDTO>, SupplierDe
 
 // Register SupplierDetailService
 builder.Services.AddScoped<SupplierDetailService>(); // Eklenen kýsým
-// Eklenen kýsým
 
-// Register MessageDetailService.cs
+// Register MessageDetailService
 builder.Services.AddScoped<MessageDetailService>();
 
+// Register UserService
 builder.Services.AddScoped<IGenericService<User>, UserService>(); // UserService'i buraya ekleyin
-
 
 // Register ComprehensiveOrderDetailService
 builder.Services.AddScoped<ComprehensiveOrderDetailService>();
 
+// Add memory cache for session management
+builder.Services.AddDistributedMemoryCache(); // Eklenen kýsým
+
+// Add session services
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Oturum zaman aþým süresi
+    options.Cookie.HttpOnly = true; // Çerezlerin sadece HTTP istekleriyle eriþilebilir olmasýný saðla
+    options.Cookie.IsEssential = true; // Çerezlerin zorunlu olduðunu belirt
+});
 
 // Add Swagger for API documentation
 builder.Services.AddSwaggerGen(c =>
@@ -94,6 +104,7 @@ app.UseRouting();
 // Use CORS policy
 app.UseCors();
 
+app.UseSession(); // Oturum middleware'ini ekle
 app.UseAuthorization();
 
 app.MapControllers();
