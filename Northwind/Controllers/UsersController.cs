@@ -96,7 +96,8 @@ namespace Northwind.Controllers
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
 
             if (string.IsNullOrEmpty(userId))
             {
